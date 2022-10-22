@@ -1,0 +1,9 @@
+  - group: ":cypress: build e2e"
+    steps:
+    - label: build e2e
+      key: "build-e2e"
+      commands:
+      - pushd e2e-tests; ./build-and-upload-image.sh; popd
+      agents:
+      - "role=node12"
+  - wait

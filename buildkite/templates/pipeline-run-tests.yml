@@ -1,0 +1,3 @@
+
+  - group: ":cypress: e2e tests ${ED_ENV}"
+    <<: *e2eSteps

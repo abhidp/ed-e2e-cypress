@@ -1,0 +1,31 @@
+{
+  "extends": [
+    "plugin:cypress/recommended",
+    "eslint:recommended",
+    "plugin:mocha/recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:prettier/recommended",
+    "prettier/@typescript-eslint"
+  ],
+  "plugins": ["cypress", "prettier", "mocha"],
+  "env": {
+    "cypress/globals": true,
+    "es6": true
+  },
+  "rules": {
+    "indent": ["error", 2, { "SwitchCase": 1, "MemberExpression": "off" }],
+    "no-var": "error",
+    "semi": [0, "always"],
+    "arrow-parens": "off",
+    "comma-dangle": "off",
+    "cypress/no-unnecessary-waiting": "warn",
+    "mocha/no-mocha-arrows": "off",
+    "mocha/max-top-level-suites": "off"
+  },
+  "parserOptions": {
+    "ecmaVersion": 6,
+    "sourceType": "module"
+  },
+  "parser": "@typescript-eslint/parser"
+}

@@ -1,0 +1,59 @@
+---
+retries: &retries
+  retry:
+    automatic:
+    - exit_status: -1
+      limit: 3
+steps:
+  - group: ":cypress: E2E Tests Feature"
+    steps:
+    - wait
+    - label: "Notify and Sleep"
+      command: sleep 120 && echo "Notifying slack about the soft_failed step"
+      agents:
+      - "role=node12"
+      plugins:
+      - seek-oss/aws-sm#v2.3.1:
+          env:
+            SLACK_TOKEN: "buildkite-slack-bot-token"
+      - ssh://git@bitbucket.org/ed-app/slack-buildkite-plugin.git#v1.7.0:
+          env: SLACK_TOKEN
+          channel: '#e2e-fail-dev'
+          message: "Build Failed \nBranch: $BUILDKITE_BRANCH  \nURL: $BUILDKITE_BUILD_URL"
+      <<: *retries
+    - wait
+    - commands:
+      - rm .buildkite/hooks/pre-exit
+      - trap 'if [[ $$(buildkite-agent step get "timeout" --step "e2e-tests-1") -eq 1 ]]; then exit 86; else exit -1; fi' SIGTERM
+      - "pushd e2e-tests"
+      - "./run-all-tests.sh"
+      - "popd"
+      label: ":test_tube: Running :cypress: E2E tests :test_tube:"
+      key: "e2e-tests-1"
+      agents:
+      - "role=node12"
+      parallelism: 14
+      timeout_in_minutes: 30
+      artifact_paths:
+      - "e2e-tests/screenshots/**/*"
+      - "e2e-tests/videos/**/*"
+      - "e2e-tests/logs/*"
+      plugins:
+      - seek-oss/aws-sm#v2.3.1:
+          json-to-env:
+          - secret-id: "build-e2e-tests"
+      retry:
+        automatic:
+        - exit_status: -1
+          limit: 3
+      soft_fail: true
+    - wait
+    - label: Final Result
+      agents:
+      - "role=node12"
+      command: |
+        sleep 10;
+        echo "$$(buildkite-agent step get --format json)"
+        if [[ "$$(buildkite-agent step get 'outcome' --step 'e2e-tests-1')" == "soft_failed" ]]; then
+          exit 1
+        fi

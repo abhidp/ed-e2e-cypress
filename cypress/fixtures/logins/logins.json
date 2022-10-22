@@ -1,0 +1,45 @@
+{
+  "login": {
+    "learner": {
+      "roles": [
+        "app-user"
+      ],
+      "email": "edappt+learner+lms+login@gmail.com"
+    },
+    "reviewer": {
+      "roles": [
+        "reviewer"
+      ],
+      "email": "edappt+reviewer+lms+login@gmail.com"
+    },
+    "contentAuthor": {
+      "roles": [
+        "content-author"
+      ],
+      "email": "edappt+content+author+lms+login@gmail.com"
+    },
+    "accountAdmin": {
+      "roles": [
+        "account-admin"
+      ],
+      "email": "edappt+account+admin+lms+login@gmail.com"
+    },
+    "accountOwner": {
+      "roles": [
+        "account-owner"
+      ],
+      "email": "edappt+account+owner+lms+login@gmail.com"
+    }
+  },
+  "forgotPassword": {
+    "adminEmail": "edappt+admin+e2e+forgot+password@edapp.com",
+    "learnerEmail": "edappt+learner+e2e+forgot+password@edapp.com"
+  },
+  "appSettingsTemplate": {
+    "email": "edappt+app+settings+lms+templates@gmail.com"
+  },
+  "banners": {
+    "adminEmail": "edappt+lms+admin+banner@gmail.com",
+    "learnerEmail": "edappt+learner+banner@gmail.com"
+  }
+}

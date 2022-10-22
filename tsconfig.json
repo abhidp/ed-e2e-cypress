@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "types": [
+      "cypress",
+      "mocha",
+      "cypress-file-upload",
+      "cypress-grep"
+    ],
+    "module": "commonjs",
+    "resolveJsonModule": true,
+    "moduleResolution": "node",
+    "strict": true,
+    "lib": ["es6", "dom"],
+    "baseUrl": ".",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "isolatedModules": false,
+    "allowJs": true,
+    "noEmit": true,
+    "checkJs": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "strictNullChecks": false
+  },
+  "include": [
+    "./**/*.ts",
+    "node_modules/cypress",
+    "**/*.ts"
+  ]
+}

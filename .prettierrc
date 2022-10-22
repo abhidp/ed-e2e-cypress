@@ -1,0 +1,9 @@
+{
+  "singleQuote": true,
+  "printWidth": 100,
+  "trailingComma": "none",
+  "semi": false,
+  "arrowParens": "avoid",
+  "tabWidth": 2,
+  "overrides": [{ "files": "*.{ts,js}" }]
+}

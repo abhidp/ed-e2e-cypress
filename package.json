@@ -1,0 +1,67 @@
+{
+  "name": "e2e-tests",
+  "version": "0.1.0",
+  "description": "EdApp end to end tests",
+  "scripts": {
+    "lint": "./node_modules/.bin/eslint --ext ts cypress",
+    "test:open:local": "node cypress/support/config/cypress.open.js --env=local",
+    "test:open:staging": "node cypress/support/config/cypress.open.js --env=staging",
+    "test:open:prod": "node cypress/support/config/cypress.open.js --env=prod",
+    "test:open:branch": "node cypress/support/config/cypress.open.js --env=branch",
+    "test:run:local": "node cypress/support/config/cypress.run.js --env=local",
+    "test:run:staging": "node cypress/support/config/cypress.run.js --env=staging",
+    "test:run:staging:from:local": "node cypress/support/config/cypress.run.js --env=default",
+    "test:run:branch": "node cypress/support/config/cypress.run.js --env=branch",
+    "get:secrets": "node cypress/support/config/getSecretsFromS3.js",
+    "upload:secrets": "node cypress/support/config/putSecretsInS3.js",
+    "pre:commit": "lint-staged",
+    "test:run:ci": "npx cypress version && node cypress/support/config/cypress.run.js",
+    "upload:artifacts:to:s3": "node cypress/support/config/uploadArtifactsToS3.js"
+  },
+  "author": "EdApp",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^0.21.1",
+    "chalk": "^4.1.1",
+    "cypress-fail-fast": "^3.0.0",
+    "cypress-failed-log": "^2.9.5",
+    "cypress-file-upload": "4.1.1",
+    "cypress-plugin-tab": "^1.0.5",
+    "dayjs": "1.10.4",
+    "del": "^6.0.0",
+    "dotenv": "8.0.0",
+    "puppeteer-core": "^19.0.0",
+    "typescript": "3.6.2"
+  },
+  "devDependencies": {
+    "@types/mocha": "^8.0.4",
+    "@types/node": "^14.14.28",
+    "@typescript-eslint/eslint-plugin": "^4.15.0",
+    "@typescript-eslint/parser": "^4.15.0",
+    "cypress": "10.2.0",
+    "eslint": "^7.19.0",
+    "eslint-config-prettier": "^7.2.0",
+    "eslint-plugin-cypress": "^2.11.2",
+    "eslint-plugin-mocha": "^8.0.0",
+    "eslint-plugin-prettier": "^3.3.1",
+    "husky": "3.1.0",
+    "lint-staged": "^10.5.4",
+    "prettier": "^2.2.1",
+    "tslint": "5.16.0"
+  },
+  "lint-staged": {
+    "*.{md,json,yaml,yml,ts,js}": [
+      "prettier --write",
+      "git add ."
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "yarn pre:commit"
+    }
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "engineStrict": false
+}
