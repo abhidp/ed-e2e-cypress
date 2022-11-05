@@ -4,6 +4,9 @@
 const MicrosoftSingleSignOn = require('./microsoftLogin').MicrosoftSingleSignOn
 const DeputyConnect = require('./deputyConnect').deputyConnect
 
+const util = require('util')
+const exec = util.promisify(require('child_process').exec)
+
 import _ from 'lodash'
 import del from 'del'
 
@@ -40,6 +43,15 @@ module.exports = (on, config) => {
   })
 
   on('before:spec', (spec, results) => {
+    /*  
+        this shell script will remove junit xml reports from the previous cypress run/retries
+        we should only keep the last retry-run for a specific file, otherwise junit report will
+        contain multiple results for the same file (eg. tests which failed in the previous 2 atttempts
+        and passed in the 3rd attempt, there will be 3 entries for this file in the report -> fail, fail, pass.
+        In this case we should only keep the pass entry and delete the other 2 failed entries) 
+     */
+    exec(`grep -rlI "${spec.name}" * | xargs -I{} rm -v {} `)
+
     log('\n')
     log(chalk.keyword('orange')(`${'_'.repeat(40)}`))
     log(chalk.keyword('orange')(`Spec started at : ${dayjs().utc().format()}`))

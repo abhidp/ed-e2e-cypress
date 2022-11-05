@@ -1,30 +1,5 @@
 #!/bin/bash
 
-function generateTag(){
-  local -r BRANCH="$1"
-  local TAG="master"
-
-  if [ $BRANCH == "master" ]
-  then
-   TAG="master"
-  elif [[ $BRANCH == *rc ]]
-  then
-   TAG=$(sed -e "s/\./-/g" <<< $BRANCH)
-  else
-    if [[ $BRANCH == *"/"* ]]
-    then
-      TAG="$(cut -d'/' -f2 <<<"$BRANCH")"
-    else
-      TAG="$BRANCH"
-    fi
-    TAG=$(sed -e "s/\./-/g" <<< $TAG)
-    TAG=$(echo $TAG | sed -e "s/_/-/g" )
-    TAG="$(cut -d'-' -f1 <<<"$TAG")"-"$(cut -d'-' -f2 <<<"$TAG")"
-  fi
-  TAG="$(tr [A-Z] [a-z] <<< "$TAG")"
-  echo $TAG
-}
-
 function exportUrlVariables(){
   local -r TAG="$1"
   local -r DOMAIN_NAME="staging.edapp.com"

@@ -13,7 +13,7 @@ const selectors = {
   starView: '#star-view'
 }
 
-describe('As Learner, on Profile Page', () => {
+xdescribe('As Learner, on Profile Page', () => {
   beforeEach('Define network calls', () => {
     cy.intercept({ method: 'GET', url: 'api/custom-achievements/sync' }).as(
       'achievementsListFetched'

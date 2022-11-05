@@ -22,8 +22,10 @@ package-lock.json
 *.key
 *.env*
 test_results/
+test-report/
 
 misc/combined.xml
+xunit.xml
 
 cypress-dashboard-url.json
 cypress-run-details.json

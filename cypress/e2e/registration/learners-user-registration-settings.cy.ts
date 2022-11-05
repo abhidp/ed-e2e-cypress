@@ -199,7 +199,7 @@ describe('Feature: User Registration Settings', () => {
           cy.get('tbody tr').should('have.lengthOf', 1)
 
           // verify user
-          cy.intercept('POST', '/user/verify').as('userVerified')
+          cy.intercept('PATCH', '/api/users/verify-user/*').as('userVerified')
 
           cy.getByTestId('user-options-button').click()
           cy.getByTestId('verify-user-option').click()

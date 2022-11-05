@@ -5,16 +5,14 @@
 
 const cypress = require('cypress')
 const { getEnv } = require('./env')
+const { getSpecPattern } = require('./helper')
 const argv = require('minimist')(process.argv.slice(2))
-
-let localConfig, branchConfig, prodSmokeConfig
 
 async function runConfig(environment) {
   return {
     config: {
       e2e: {
-        specPattern: '**/*.cy.ts',
-        excludeSpecPattern: ['deputy-integration.cy.ts']
+        specPattern: getSpecPattern(environment),
       }
     },
     env: await getEnv(environment)
@@ -23,35 +21,24 @@ async function runConfig(environment) {
 
 async function options() {
   if (argv.env) {
-    switch (argv.env.toUpperCase()) {
-      case 'LOCAL':
-        localConfig = await runConfig('local')
-        localConfig.config.e2e.excludeSpecPattern = [
-          'learners-sso.cy.ts',
-          'course-pagination-learners.cy.ts'
-        ]
-        return localConfig
-
-      case 'STAGING':
-        return await runConfig('staging')
+    const environment = argv.env.toUpperCase()
+    switch (environment) {
 
       case 'PROD-SMOKE':
       case 'PRODUCTION-SMOKE':
-        prodSmokeConfig = await runConfig('production')
-        prodSmokeConfig.config.testFiles = ['login/*', 'registration/*']
+        const prodSmokeConfig = await runConfig('production')
+        prodSmokeConfig.config.testFiles = ['cypress/e2e/login/*', 'cypress/e2e/registration/*']
         return prodSmokeConfig
 
+      case 'LOCAL':
+      case 'STAGING':
       case 'PROD':
       case 'PRODUCTION':
-        return await runConfig('production')
-
       case 'BRANCH':
-        branchConfig = await runConfig('branch')
-        branchConfig.config.e2e.excludeSpecPattern = ['learners-sso.cy.ts']
-        return branchConfig
+        return await runConfig(environment)
 
       default:
-        return await runConfig('local')
+        return await runConfig('LOCAL')
     }
   } else {
     console.error(
@@ -61,7 +48,7 @@ async function options() {
   }
 }
 
-;(async () => {
+; (async () => {
   const openOptions = await options()
   console.log('Opening with the following config :\n', openOptions)
 

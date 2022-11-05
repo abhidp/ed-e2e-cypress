@@ -6,6 +6,10 @@ let adminEmail: string
 const password = Cypress.env('COMMON_TEST_PASSWORD')
 const courseTitle = 'ED-17816-Course'
 
+const selectors = {
+  tooltip: 'preview-course-tooltip'
+}
+
 describe('Course Preview page - QR code "Preview in the app" 🈁 ', () => {
   it('Create LMS Admin Account with 1 published Course', () => {
     adminEmail = createEmail()
@@ -24,7 +28,7 @@ describe('Course Preview page - QR code "Preview in the app" 🈁 ', () => {
         .invoke('attr', 'style', 'pointer-events: auto; visibility: visible;')
         .click()
       // verify QR code existence
-      cy.contains('Preview in the app').should('exist').and('be.visible')
+      cy.getByTestId(selectors.tooltip).should('exist').and('be.visible')
       // cross QR code
       cy.getByTestId('preview-course-tooltip-cross-icon').click()
       cy.getByTestId('preview-course-tooltip').should('not.exist')
@@ -39,7 +43,7 @@ describe('Course Preview page - QR code "Preview in the app" 🈁 ', () => {
           .invoke('attr', 'style', 'pointer-events: auto; visibility: visible;')
           .click()
         // verify QR code absence
-        cy.contains('Preview in the app').should('not.exist')
+        cy.getByTestId(selectors.tooltip).should('not.exist')
       })
     })
   })

@@ -51,7 +51,10 @@ export const navigateTo = (
   const onBeforeLoad = resetSession ? window => window.localStorage.clear() : undefined
 
   if (app === 'LEARNERS_APP') {
-    mockAllFeatureFlags([{ key: 'lx-new-rego', value: true }])
+    mockAllFeatureFlags([
+      { key: 'lx-new-rego', value: true },
+      { key: 'lx-course-banner', value: true }
+    ])
   }
 
   return cy
@@ -252,5 +255,31 @@ export const uuidv4 = () => {
   })
 }
 
-export const timeDiffInHours = (currentTime: number, pastTime: number) => 
+export const timeDiffInHours = (currentTime: number, pastTime: number) =>
   Math.abs((currentTime - pastTime) / (60 * 60 * 1000)) //milliseconds in 1 hour
+
+export const select = (
+  dropdownText: string | RegExp,
+  optionText: string | RegExp,
+  /**
+   * custom selector
+   */
+  selector?: {
+    selectCourse?: string
+    selectMenu?: string
+  }
+): void => {
+  const selectors = {
+    selectCourse: '[class*="ed-select__value-container"]',
+    selectMenu: '[class*="ed-select__menu"]',
+    ...selector
+  }
+
+  cy.get(selectors.selectCourse).contains(dropdownText).click()
+  cy.get(selectors.selectMenu)
+    .contains(optionText)
+    .then(option => {
+      cy.wrap(option).contains(optionText)
+      cy.wrap(option).click()
+    })
+}

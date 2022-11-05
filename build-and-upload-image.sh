@@ -32,6 +32,10 @@ function buildAndTagImage() {
   echo "## Upload image to ECR with branch and commit tags"
   docker push "${fullImageRepo}:${FORMATED_BRANCH_NAME}"
 
+  if [[ "$BUILDKITE_BRANCH" = "master" ]]; then
+      docker tag "${fullImageRepo}:${FORMATED_BRANCH_NAME}" "${fullImageRepo}:${GIT_COMMIT}"
+      docker push "${fullImageRepo}:${GIT_COMMIT}"
+  fi
 }
 
 function main() {

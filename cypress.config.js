@@ -1,5 +1,7 @@
 // import { defineConfig } from 'cypress'
 const { defineConfig } = require('cypress')
+const parentReportFolder = 'cypress/test-report'
+const junitReportFolder = 'junit-results'
 
 module.exports = defineConfig({
   defaultCommandTimeout: 60000,
@@ -21,6 +23,19 @@ module.exports = defineConfig({
   retries: {
     runMode: 2,
     openMode: 0
+  },
+  parentReportFolder,
+  junitReportFolder,
+  reporter: 'cypress-multi-reporters',
+  reporterOptions: {
+    reporterEnabled: 'spec, mocha-junit-reporter',
+    mochaJunitReporterReporterOptions: {
+      mochaFile: `${parentReportFolder}/${junitReportFolder}/results[hash].xml`,
+      includePending: true,
+      testsuitesTitle: true,
+      suiteTitleSeparatedBy: ' > ',
+      useFullSuiteTitle: true
+    }
   },
   blockHosts: [
     '*lftracker.leadfeeder.com',

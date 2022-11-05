@@ -26,10 +26,13 @@
     "cypress-fail-fast": "^3.0.0",
     "cypress-failed-log": "^2.9.5",
     "cypress-file-upload": "4.1.1",
+    "cypress-multi-reporters": "^1.6.1",
     "cypress-plugin-tab": "^1.0.5",
     "dayjs": "1.10.4",
     "del": "^6.0.0",
     "dotenv": "8.0.0",
+    "junit-report-merger": "^4.0.0",
+    "mocha-junit-reporter": "^2.1.1",
     "puppeteer-core": "^19.0.0",
     "typescript": "3.6.2"
   },

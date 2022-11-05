@@ -1,33 +1,47 @@
 retries: &retries
   retry:
     automatic:
-    - exit_status: -1
-      limit: 3
-
-e2eSteps: &e2eSteps
-  steps:
-  - commands:
-    - "pushd e2e-tests"
-    - "./run-all-tests.sh"
-    - "popd"
-    label: ":test_tube: Running :cypress: E2E tests :test_tube:"
-    key: "e2e-tests-${BUILDKITE_RETRY_COUNT}"
-    agents:
-    - "role=node12"
-    parallelism: 14
-    timeout_in_minutes: 30
-    artifact_paths:
-    - "e2e-tests/screenshots/**/*"
-    - "e2e-tests/videos/**/*"
-    - "e2e-tests/logs/*"
-    plugins:
-    - seek-oss/aws-sm#v2.3.1:
-        json-to-env:
-        - secret-id: "build-e2e-tests"
-    retry:
-      manual: false
-      automatic:
       - exit_status: -1
         limit: 3
+
+e2eSteps: &e2eSteps
+  env:
+    BUILDKITE_ANALYTICS_TOKEN: 'gpeGRZKcGzxQHKkFxP1CZAEM'
+  steps:
+    - commands:
+        - 'pushd e2e-tests'
+        - './run-all-tests.sh'
+        - 'popd'
+      label: ':test_tube: Running :cypress: E2E tests :test_tube:'
+      key: 'e2e-tests-${BUILDKITE_RETRY_COUNT}'
+      agents:
+        - 'role=node12'
+      parallelism: 14
+      timeout_in_minutes: 30
+      artifact_paths:
+        - 'e2e-tests/screenshots/**/*'
+        - 'e2e-tests/videos/**/*'
+        - 'e2e-tests/logs/*'
+        - 'e2e-tests/test-report/junit-results/results*.xml'
+      plugins:
+        - seek-oss/aws-sm#v2.3.1:
+            json-to-env:
+              - secret-id: 'build-e2e-tests'
+        - test-collector#v1.0.0:
+            files: 'e2e-tests/test-report/junit-results/results*.xml'
+            format: 'junit'
+      retry:
+        manual: false
+        automatic:
+          - exit_status: -1
+            limit: 3
+    - wait: ~
+      continue_on_failure: true
+    - plugins:
+        - junit-annotate#v2.4.1:
+            artifacts: 'e2e-tests/test-report/junit-results/results*.xml'
+            always-annotate: true
+            min-tests: 1
+            failure-format: file
 
 steps:

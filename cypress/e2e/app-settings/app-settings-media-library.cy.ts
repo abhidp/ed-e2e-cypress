@@ -5,21 +5,14 @@ const password = Cypress.env('COMMON_TEST_PASSWORD')
 const companyLogo = 'courses/courseThumbnail.jpg'
 
 describe('Feature: App Settings page', () => {
-  const gotoAppSettings = () => {
+  it('Scenario: Enable Media Library', () => {
+    email = createEmail()
+    cy.createLmsAccount(email, password)
+    cy.navigateTo('LMS')
+
     cy.getByTestId('userSettingsDropdown').click({ force: true })
     cy.get('a').contains('App Settings').first().click()
     cy.url().should('include', 'app-settings')
-  }
-
-  it('Create account and navigate to LMS', () => {
-    email = createEmail()
-    cy.createLmsAccount(email, password)
-
-    cy.navigateTo('LMS')
-  })
-
-  it('Scenario: Enable Media Library', () => {
-    gotoAppSettings()
     cy.intercept('GET', 'api/accounts/app-settings/content').as('getContent')
 
     cy.navigateTo('LMS', '/app-settings#panel-content').wait('@getContent')

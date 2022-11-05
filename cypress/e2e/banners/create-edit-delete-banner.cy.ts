@@ -23,6 +23,7 @@ const bannerTitleUpdated = `Banner-Updated ${Date.now()}`
 
 // banners sync is not working consistently - Learner is not able to see the new banner
 
+// if this files need to be enabled please remove the exclusion on the runner on config/helper.js
 xdescribe('Feature: Banners 🪧 ', () => {
   after('Clean up - Delete UG more than 24 hours old via API', () => {
     cy.loginLMS(adminEmail, password)

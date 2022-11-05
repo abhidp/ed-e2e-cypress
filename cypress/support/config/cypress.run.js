@@ -4,92 +4,88 @@
 // https://on.cypress.io/module-api
 
 const { getEnv } = require('./env')
-const { getTestsForShard, getProdSpecFiles } = require('./helper')
+const {
+  getSpecPattern,
+  getSpecExcludePattern,
+  getTestsForShard,
+  getSpecsFromUserInput,
+  sleep
+} = require('./helper')
 
 const argv = require('minimist')(process.argv.slice(2))
+const cyStaticConfig = require('../../../cypress.config')
 const cypress = require('cypress')
 const _ = require('lodash')
 const chalk = require('chalk')
 const axios = require('axios').default
 const util = require('util')
+const exec = util.promisify(require('child_process').exec)
 const browser = argv.browser || 'chrome'
+const combineJunitReport = `combined-junit-${
+  argv['buildkite-parallel-job'] || Date.now().toString()
+}.xml`
 
-async function runConfig(environment) {
-  let excludeSpecPattern = ['cypress/e2e/excluded-tests/*.cy.ts']
+/**
+ * Given a runtime environment, get the specific config for running cypress
+ * @param {string} environment - Which environment this is run in (i.e. BRANCH, STAGING, PRODUCTION)
+ * @returns {Promise<Partial<CypressCommandLine.CypressRunOptions>>}
+ */
+async function getCypressRuntimeConfigForEnvironment(environment) {
+  const specPattern = getSpecPattern(environment)
+  const spec = argv.spec ? await getSpecsFromUserInput(argv.spec) : undefined
 
+  const cypressRuntimeOptions = {
+    browser,
+    env: await getEnv(environment)
+  }
+
+  if (environment === 'LOCAL') {
+    return {
+      ...cypressRuntimeOptions,
+      'no-exit': true,
+      config: {
+        e2e: { specPattern: spec || specPattern }
+      }
+    }
+  }
+
+  const excludeSpecPattern = getSpecExcludePattern(environment)
   const shardTests = await getTestsForShard(
-    '**/*.cy.ts',
+    specPattern,
     argv['buildkite-parallel-job-count'],
     argv['buildkite-parallel-job']
   )
 
   return {
-    browser,
-    spec: argv.spec ? `cypress/e2e/**/${argv.spec}` : undefined,
+    ...cypressRuntimeOptions,
     config: {
-      e2e: { specPattern: shardTests, excludeSpecPattern }
-    },
-    env: await getEnv(environment)
+      e2e: { specPattern: spec || shardTests, excludeSpecPattern }
+    }
   }
 }
 
-async function options() {
+/**
+ * Retrieves the runtime environment and gets the config for cypress to run
+ * @returns {Promise<Partial<CypressCommandLine.CypressRunOptions>>}
+ */
+async function generateCypressRuntimeConfig() {
   if (argv.env) {
-    switch (argv.env.toUpperCase()) {
+    const environment = argv.env.toUpperCase()
+    switch (environment) {
       case 'LOCAL':
-        return {
-          browser,
-          'no-exit': true,
-          spec: argv.spec ? `cypress/e2e/**/${argv.spec}` : undefined,
-          config: {
-            e2e: { specPattern: '**/*.cy.ts' }
-          },
-          env: await getEnv('LOCAL')
-        }
-
-      case 'STAGING':
-        stagingConfig = await runConfig('staging')
-        return stagingConfig
-
       case 'PROD-SMOKE':
       case 'PRODUCTION-SMOKE':
-        const prodSmokeSpecs = await getProdSpecFiles()
-        prodSmokeConfig = await runConfig('production')
-        prodSmokeConfig.config.e2e.specPattern = await getTestsForShard(
-          prodSmokeSpecs,
-          argv['buildkite-parallel-job-count'],
-          argv['buildkite-parallel-job']
-        )
-
-        return prodSmokeConfig
-
       case 'PROD':
       case 'PRODUCTION':
-        return await runConfig('production')
-
+      case 'STAGING':
       case 'BRANCH':
-        branchConfig = await runConfig('branch')
-        branchConfig.config.e2e.excludeSpecPattern = [
-          'cypress/e2e/**/*.experiment.cy.ts',
-          'cypress/e2e/**/learners-sso.cy.ts', // learner sso tests cannot run on branch because Microsoft Azure AD callback URL has to be setup individual branches separately
-          'cypress/e2e/**/deferred-deeplink.cy.ts', // deeplinks cannot run on branch because branc.io urls are only setup for master branch
-          'cypress/e2e/**/v1-api-deeplink-to-lesson.cy.ts',
-          'cypress/e2e/**/deeplinks.cy.ts',
-          'cypress/e2e/**/invite-link-course-preview.cy.ts', // invite link URL are only setup for master not for branch
-          'cypress/e2e/**/lms-registration-and-onboarding.cy.ts', //invite link doesn't work on feature branches
-          'cypress/e2e/excluded-tests/*.cy.ts'
-        ]
-        return branchConfig
+        return await getCypressRuntimeConfigForEnvironment(environment)
 
       default:
-        return {
-          browser,
-          spec: argv.spec ? `cypress/e2e/**/${argv.spec}` : undefined,
-          config: {
-            e2e: { specPattern: shardTests, excludeSpecPattern }
-          },
-          env: await getEnv('STAGING')
-        }
+        console.warn(
+          `Environment did not match an expected value, defaulting to STAGING. Environment provided (${argv.env})`
+        )
+        return await getCypressRuntimeConfigForEnvironment('STAGING')
     }
   } else {
     console.error(
@@ -113,15 +109,24 @@ const maxRetries = 3
 let defaultConfig, config
 let totalFailuresIncludingRetries = 0
 
-const cypressRun = async (num, spec) => {
-  num += 1
+/**
+ * A wrapper for the Cypress Run command to retry failed spec more before declaring them failed
+ * @param {number} iteration - The iteration of test running (provide 0 to start)
+ * @param {*} spec - Optional spec pattern (provided on retries for a subset run)
+ * @returns - recursive call to itself
+ */
+const runCypressWithRetryWrapper = async (iteration, spec) => {
+  iteration += 1
 
   config = defaultConfig
-  config.env.numRuns = num
+  config.env.numRuns = iteration
 
   if (spec) config.spec = spec
+
+  console.log('--- Cypress Config')
   console.log('Running with the following config :\n', util.inspect(config, false, null, true))
 
+  console.log('+++ Running E2E Tests')
   return cypress
     .run(config)
     .then(results => {
@@ -131,43 +136,35 @@ const cypressRun = async (num, spec) => {
       if (results.totalFailed) {
         totalFailuresIncludingRetries += results.totalFailed
 
-        // rerun again with only the failed tests
-        const specs = _(results.runs).filter('stats.failures').map('spec.relative').value()
+        console.log(`Run #${iteration} failed.`)
 
-        console.log(`Run #${num} failed.`)
-
-        // if this is the 3rd total run (2nd retry)
-        // and we've still got failures then just exit
-        if (num >= maxRetries) {
+        // If this is final retry and theres failures then just exit
+        if (iteration >= maxRetries) {
           console.log(
             `Ran a total of '${maxRetries}' times but still have failures. Exiting with exit code ${totalFailuresIncludingRetries}\n`
           )
 
+          //merge all individual junit xml files into one combined file at the end of all retries
+          // exec(
+          //   `jrm ./${cyStaticConfig.parentReportFolder}/${combineJunitReport} "./${cyStaticConfig.parentReportFolder}/${cyStaticConfig.junitReportFolder}/*.xml"`
+          // )
+
           return process.exit(totalFailuresIncludingRetries)
         }
+
+        // Rerun again with only the failed tests
+        const specs = _(results.runs).filter('stats.failures').map('spec.relative').value()
 
         console.log(`\nRetrying '${specs.length}' specs...`)
         console.log(specs)
 
-        return cypressRun(num, specs)
+        return runCypressWithRetryWrapper(iteration, specs)
       }
     })
     .catch(err => {
       console.error(err.message)
       process.exit(1)
     })
-}
-
-async function run() {
-  defaultConfig = await options()
-
-  if (argv.env.toUpperCase() === 'BRANCH') {
-    console.log('--- :hospital: Checking Service Health')
-    await checkApplicationHealth(defaultConfig)
-  }
-
-  console.log('+++ Running E2E Tests')
-  await cypressRun(0)
 }
 
 /**
@@ -232,12 +229,15 @@ async function checkServerStatus(serviceName, serviceBaseUrl, serviceHealthCheck
   }
 }
 
-/**
- * Helper to halt execution for the specified time
- * @param {number} msec - Millisecond count for the sleep period
- */
-async function sleep(msec) {
-  return new Promise(resolve => setTimeout(resolve, msec))
+async function main() {
+  defaultConfig = await generateCypressRuntimeConfig()
+
+  if (argv.env.toUpperCase() === 'BRANCH') {
+    console.log('--- :hospital: Checking Service Health')
+    await checkApplicationHealth(defaultConfig)
+  }
+
+  await runCypressWithRetryWrapper(0)
 }
 
-run()
+main()

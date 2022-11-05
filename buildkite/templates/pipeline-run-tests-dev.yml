@@ -1,35 +1,48 @@
-
-  - group: ":cypress: E2E Tests Feature"
-    steps:
+- group: ':cypress: E2E Tests Feature'
+  steps:
     - commands:
-      - rm .buildkite/hooks/pre-exit
-      - trap 'if [[ $(buildkite-agent step get "timeout" --step "e2e-tests-0") -eq 1 ]]; then exit 86; else exit -1; fi' SIGTERM
-      - "pushd e2e-tests"
-      - "./run-all-tests.sh"
-      - "popd"
-      label: ":test_tube: Running :cypress: E2E tests :test_tube:"
-      key: "e2e-tests-0"
+        - rm .buildkite/hooks/pre-exit
+        - trap 'if [[ $(buildkite-agent step get "timeout" --step "e2e-tests-0") -eq 1 ]]; then exit 86; else exit -1; fi' SIGTERM
+        - 'pushd e2e-tests'
+        - './run-all-tests.sh'
+        - 'popd'
+      label: ':test_tube: Running :cypress: E2E tests :test_tube:'
+      env:
+        BUILDKITE_ANALYTICS_TOKEN: gpeGRZKcGzxQHKkFxP1CZAEM
+      key: 'e2e-tests-0'
       agents:
-      - "role=node12"
+        - 'role=node12'
       parallelism: 14
       timeout_in_minutes: 30
       artifact_paths:
-      - "e2e-tests/screenshots/**/*"
-      - "e2e-tests/videos/**/*"
-      - "e2e-tests/logs/*"
+        - 'e2e-tests/screenshots/**/*'
+        - 'e2e-tests/videos/**/*'
+        - 'e2e-tests/logs/*'
+        - 'e2e-tests/test-report/junit-results/results*.xml'
       plugins:
-      - seek-oss/aws-sm#v2.3.1:
-          json-to-env:
-          - secret-id: "build-e2e-tests"
+        - seek-oss/aws-sm#v2.3.1:
+            json-to-env:
+              - secret-id: 'build-e2e-tests'
+        - test-collector#v1.0.0:
+            files: 'e2e-tests/test-report/junit-results/results*.xml'
+            format: 'junit'
       retry:
         automatic:
-        - exit_status: -1
-          limit: 3
+          - exit_status: -1
+            limit: 3
       soft_fail: true
+    - wait: ~
+      continue_on_failure: true
+    - plugins:
+        - junit-annotate#v2.4.1:
+            artifacts: 'e2e-tests/test-report/junit-results/results*.xml'
+            always-annotate: true
+            min-tests: 1
+            failure-format: file
     - wait
     - label: Check results
       agents:
-      - "role=node12"
+        - 'role=node12'
       command: |
         if [ "$$(buildkite-agent step get 'outcome' --step 'e2e-tests-0')" == "soft_failed" ]; then
           cat ./e2e-tests/buildkite/templates/pipeline-run-tests-dev-II.yml | buildkite-agent pipeline upload

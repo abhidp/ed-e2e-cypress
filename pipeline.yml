@@ -1,35 +1,53 @@
 steps:
-  - group: ":cypress: build e2e"
+  - group: ':cypress: build e2e'
     steps:
-    - label: build e2e
-      key: "build-e2e"
-      commands:
-      - pushd e2e-tests; ./build-and-upload-image.sh; popd
-      agents:
-      - "role=node12"
+      - label: build e2e
+        key: 'build-e2e'
+        commands:
+          - pushd e2e-tests; ./build-and-upload-image.sh; popd
+        agents:
+          - 'role=node12'
   - wait
-  - group: ":cypress: e2e tests"
+  - group: ':cypress: e2e tests'
     steps:
-    - commands:
-      - "pushd e2e-tests"
-      - "./run-all-tests.sh"
-      - "popd"
-      label: ":test_tube: Running :cypress: E2E tests :test_tube:"
-      key: "e2e-tests"
-      agents:
-      - "role=node12"
-      parallelism: 14
-      timeout_in_minutes: 30
-      artifact_paths:
-      - "e2e-tests/screenshots/**/*"
-      - "e2e-tests/videos/**/*"
-      - "e2e-tests/logs/*"
-      plugins:
-      - seek-oss/aws-sm#v2.3.1:
-          json-to-env:
-          - secret-id: "build-e2e-tests"
-      retry:
-        manual: false
-        automatic:
-        - exit_status: -1
-          limit: 3
+      - commands:
+          - 'pushd e2e-tests'
+          - './run-all-tests.sh'
+          - 'popd'
+        label: ':test_tube: Running :cypress: E2E tests :test_tube:'
+        env:
+          BUILDKITE_ANALYTICS_TOKEN: gpeGRZKcGzxQHKkFxP1CZAEM
+        key: 'e2e-tests'
+        agents:
+          - 'role=node12'
+        parallelism: 2
+        timeout_in_minutes: 30
+        artifact_paths:
+          - 'e2e-tests/screenshots/**/*'
+          - 'e2e-tests/videos/**/*'
+          - 'e2e-tests/logs/*'
+          - 'e2e-tests/test-report/junit-results/results*.xml'
+        plugins:
+          - seek-oss/aws-sm#v2.3.1:
+              json-to-env:
+                - secret-id: 'build-e2e-tests'
+          # - test-collector#v1.0.0:
+          #     files: 'e2e-tests/test-report/junit-results/results*.xml'
+          #     format: 'junit'
+      - wait: ~
+        continue_on_failure: true
+      - label: annotate
+        plugins:
+          - bugcrowd/test-summary#v1.11.0:
+              inputs:
+                - label: cypress-e2e-tests
+                  artifact_path: 'e2e-tests/test-report/junit-results/results*.xml'
+                  type: junit
+              formatter:
+                type: details
+              context: test-summary
+        retry:
+          manual: false
+          automatic:
+            - exit_status: -1
+              limit: 3

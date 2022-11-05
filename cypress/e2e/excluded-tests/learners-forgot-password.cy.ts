@@ -1,3 +1,6 @@
+// Excluded from all STAGING and PROD runs
+// https://ed-app.atlassian.net/browse/ED-27218
+
 /*
     Reason for excluding forgot-password spec:
     "message": "4.2.1 The user you are trying to contact is receiving mail at a rate that

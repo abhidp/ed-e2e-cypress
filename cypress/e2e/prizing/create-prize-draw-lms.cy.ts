@@ -68,7 +68,7 @@ describe('Feature: Create Prize Draw', () => {
       cy.get('[type="file"]').attachFile(prizeBackgroundImage).wait('@drawSaved')
       cy.get(selectors.saveMsg).should('be.visible')
 
-      cy.getByTestId('imageUploadPreview').should('exist').and('be.visible')
+      cy.getByTestId('fileinput-thumbnail').should('exist').and('be.visible')
 
       cy.getByName('draw.start')
         .click()

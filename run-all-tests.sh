@@ -40,6 +40,7 @@ fi
 rm -rf $(pwd)/videos && mkdir -p $(pwd)/videos
 rm -rf $(pwd)/screenshots && mkdir -p $(pwd)/screenshots
 rm -rf $(pwd)/logs && mkdir -p $(pwd)/logs
+rm -rf $(pwd)/test-report && mkdir -p $(pwd)/test-report
 
 echo "--- Starting Cypress Runner"
 
@@ -50,6 +51,7 @@ docker run -it \
   -v $(pwd)/videos:/e2e/cypress/videos \
   -v $(pwd)/screenshots:/e2e/cypress/screenshots \
   -v $(pwd)/logs:/e2e/cypress/logs \
+  -v $(pwd)/test-report:/e2e/cypress/test-report \
   "${fullImageRepo}:${FORMATED_BRANCH_NAME}" \
   /bin/sh -c "${RUN_COMMAND}"
 

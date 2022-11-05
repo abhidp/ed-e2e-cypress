@@ -1,8 +1,5 @@
 import { createEmail, createName } from 'cypress/support/helper/common-util'
-import {
-  mockFeatureFlags,
-  addUserToUserGroupPublicApiFromHippo
-} from 'cypress/support/helper/api-helper'
+import { addUserToUserGroupPublicApiFromHippo } from 'cypress/support/helper/api-helper'
 
 let adminEmail: string
 let learnerEmailA: string
@@ -17,7 +14,6 @@ const password = Cypress.env('COMMON_TEST_PASSWORD')
 
 describe('Feature: Users Bulk Actions 👥 ', () => {
   beforeEach(() => {
-    mockFeatureFlags([{ key: 'enable-bulk-delete-users', value: true }])
     cy.intercept('POST', '/api/users/user-list').as('getUsers')
   })
 
@@ -77,7 +73,7 @@ describe('Feature: Users Bulk Actions 👥 ', () => {
     // User secondary search_Clear all
     cy.getByTestId('bulk-assign-user-groups-modal').contains('Clear all').click().wait('@getUsers')
 
-    // first modal
+    // first page in modal
     cy.getByTestId('bulk-assign-user-groups-modal')
       .should('be.visible')
       .getByTestId('searchable-list-input')
@@ -89,7 +85,7 @@ describe('Feature: Users Bulk Actions 👥 ', () => {
     cy.contains('1 user selected')
     cy.getByButtonText('Next').click()
 
-    // second modal
+    // second page in modal
     cy.intercept('GET', '/api/usergroups/excluding-collections?*').as('getUserGroups')
     cy.getByTestId('bulk-assign-user-groups-modal').should('be.visible')
     cy.contains('Assign user groups to selected users')
@@ -98,7 +94,7 @@ describe('Feature: Users Bulk Actions 👥 ', () => {
     cy.getByClassNameLike('SelectedOption').contains(userGroupName)
     cy.getByButtonText('Next').click()
 
-    // third modal_Add user group
+    // third page in modal_Add user group
     cy.getByClassNameLike('RadioIcon').first().click()
     cy.intercept('POST', `/api/users/assign-user-groups`).as('postAssignUserGroups')
     cy.getByButtonText('Assign user groups')
@@ -106,7 +102,7 @@ describe('Feature: Users Bulk Actions 👥 ', () => {
       .click()
       .wait('@postAssignUserGroups')
 
-    // fourth modal
+    // fourth page in modal
     cy.contains('Continue').should('be.visible').click().wait('@getUsers')
 
     // assertion
@@ -129,12 +125,12 @@ describe('Feature: Users Bulk Actions 👥 ', () => {
     cy.getByTestId('open-bulk-actions-button').click()
     cy.getByTestId('assign-user-groups-option').click().wait('@getUsers')
 
-    // first modal
+    // first page in modal
     cy.getByTestId('bulk-assign-user-groups-modal').should('be.visible')
     cy.contains('3 users selected')
     cy.getByButtonText('Next').click()
 
-    // second modal
+    // second page in modal
     cy.getByTestId('bulk-assign-user-groups-modal').should('be.visible')
     cy.contains('Assign user groups to selected users')
     cy.getByTestId('searchable-list-input').click().type(userGroupName).wait('@getUserGroups')
@@ -142,20 +138,107 @@ describe('Feature: Users Bulk Actions 👥 ', () => {
     cy.getByClassNameLike('SelectedOption').contains(userGroupName)
     cy.getByButtonText('Next').click()
 
-    // third modal_Replace user group
+    // third page in modal_Replace user group
     cy.getByClassNameLike('RadioIcon').last().click()
     cy.getByButtonText('Assign user groups')
       .should('be.visible')
       .click()
       .wait('@postAssignUserGroups')
 
-    // fourth modal
+    // fourth page in modal
     cy.contains('Continue').should('be.visible').click().wait('@getUsers')
 
     // assertion
     cy.getByPlaceHolderText('Search users').type(learnerEmailA)
     cy.getByTestId('search-button').click().wait('@getUsers')
     cy.getByTestId('cell-Groups').should('contain.text', `(1) ${userGroupName}`)
+  })
+
+  it('Should navigate to users and Bulk Add/replace Roles', () => {
+    cy.navigateTo('LMS', '/users').wait('@getUsers')
+
+    // User group grid
+    cy.getByPlaceHolderText('Search users').type(learnerEmailB)
+    cy.getByTestId('search-button')
+      .click()
+      .wait('@getUsers')
+      .its('response.statusCode')
+      .should('eq', 200)
+    cy.get('tbody tr').should('have.lengthOf', 1)
+    cy.get('thead').find('[data-testid=checkbox-label]').click()
+    cy.getByTestId('open-bulk-actions-button').click()
+    cy.getByTestId('assign-roles-option').click().wait('@getUsers')
+
+    // User secondary search_Clear all
+    cy.getByTestId('bulk-assign-roles-modal').contains('Clear all').click().wait('@getUsers')
+
+    // first page in modal
+    cy.getByTestId('bulk-assign-roles-modal')
+      .should('be.visible')
+      .getByTestId('searchable-list-input')
+      .click()
+      .type(learnerEmailA)
+      .wait('@getUsers')
+    cy.getByClassNameLike('ed-select__option').contains(learnerEmailA).click().wait('@getUsers')
+    cy.getByClassNameLike('SelectedOption').contains(learnerEmailA)
+    cy.contains('1 user selected')
+    cy.getByButtonText('Next').click()
+
+    // second page in modal
+    cy.intercept('GET', '/api/users/get-roles-for-bulk-actions?*').as('getRoles')
+    cy.getByTestId('bulk-assign-roles-modal').should('be.visible')
+    cy.contains('Select roles')
+    cy.get('input[label="Admin"]+div').click()
+    cy.getByButtonText('Next').click()
+
+    // third page in modal_Add user group
+    cy.getByClassNameLike('RadioIcon').first().click()
+    cy.intercept('POST', `/api/users/assign-roles`).as('postAssignRoles')
+    cy.getByButtonText('Assign roles').should('be.visible').click().wait('@postAssignRoles')
+
+    // fourth page in modal
+    cy.contains('Continue').should('be.visible').click().wait('@getUsers')
+
+    // assertion
+    cy.getByPlaceHolderText('Search users').clearAndType(learnerEmailA)
+    cy.getByTestId('search-button')
+      .click()
+      .wait('@getUsers')
+      .its('response.statusCode')
+      .should('eq', 200)
+    cy.getByTestId('cell-Roles').should('contain.text', '(3) Admin, Learner, Prizing User') // roles
+
+    // clear search by cross button
+    cy.getByTestId('clear-input-icon').click().wait('@getUsers')
+    cy.get('tbody tr').should('have.lengthOf', 3)
+
+    // select all
+    cy.get('thead').find('[data-testid=checkbox-label]').click()
+    cy.getByTestId('open-bulk-actions-button').click()
+    cy.getByTestId('assign-roles-option').click().wait('@getUsers')
+
+    // first page in modal
+    cy.getByTestId('bulk-assign-roles-modal').should('be.visible')
+    cy.contains('3 users selected')
+    cy.getByButtonText('Next').click()
+
+    // second page in modal
+    cy.getByTestId('bulk-assign-roles-modal').should('be.visible')
+    cy.contains('Select roles')
+    cy.get('input[label="Reviewer"]+div').click()
+    cy.getByButtonText('Next').click()
+
+    // third page in modal_Replace user group
+    cy.getByClassNameLike('RadioIcon').last().click()
+    cy.getByButtonText('Assign roles').should('be.visible').click().wait('@postAssignRoles')
+
+    // fourth page in modal
+    cy.contains('Continue').should('be.visible').click().wait('@getUsers')
+
+    // assertion
+    cy.getByPlaceHolderText('Search users').type(learnerEmailA)
+    cy.getByTestId('search-button').click().wait('@getUsers')
+    cy.getByTestId('cell-Roles').should('contain.text', '(1) Reviewer') // roles
   })
 
   it('Should navigate to users and Bulk Delete Users', () => {

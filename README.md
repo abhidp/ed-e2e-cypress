@@ -1,5 +1,3 @@
-[![CircleCI](https://circleci.com/bitbucket/ed-app/ed-e2e-tests/tree/master.svg?style=shield&circle-token=21915a2540af21c3f12b8555ad84230ad9688544)](https://dashboard.cypress.io/organizations/8c381357-66ea-421f-b4bc-8e9d9642d5af/projects)
-
 # Getting Started
 
 ### To bootstrap the project:
@@ -14,13 +12,13 @@
 
 - If you are running tests for the first time in your local, you need to do the following one-time setup:
 
-  - Create a new account in LMS and replace the following variables in the `.env` file with its credentials:
-    - `SUPER_ADMIN_EMAIL` - Email of the new account
-    - `SUPER_ADMIN_PASSWORD` - Plaintext password of the new account
-  - Add `ed-admin` role to this account in MongoDB, e.g.
+  - Create a new account in LMS with the following details
+    - email: value of `SUPER_ADMIN_EMAIL` from `.env` file
+    - password: value of `SUPER_ADMIN_PASSWORD` from `.env` file
+  - Add `ed-admin` role to this account in MongoDB, e.g. ()
 
         db.appusers.updateOne(
-          { email: '{{NEW-ACCOUNT-EMAIL}}' },
+          { email: '{{SUPER_ADMIN_EMAIL}}' },
           {
             $push: {
               roles: {
@@ -66,16 +64,12 @@ Results can be viewed on Cypress Dashboard for Staging and Production runs
 The concept of _journeys_ is to get the test from state A to state B. They are not testing anything. Most times they should be only calling api endpoints to get the database/server ready for the test to be run
 Journeys are present under `cypress/support/journeys`
 
-## Data Selectors
+## Extra info about Data Selectors
 
 [Documentation Here](https://ed-app.atlassian.net/wiki/spaces/DEV/pages/398196856/Automation+Tests+-+Data+Selectors)
 
 ## CI/CD
 
-- All tests run on the PR build on Buildkite after Feature branch environment
-- After merge to `master` all tests on STAGING environment (see run details on Cypress dashboard)
-- After release to PROD, smoke tests run on PRODUCTION environment (see run details on Cypress dashboard)
-
-## Cypress Dashboard
-
-Tests executions in CI can be tracked via [Cypress Dashboard](https://dashboard.cypress.io/projects/swgayh/runs). These runs contain videos and screenshots of failed tests.
+- Tests run on the PR build on Buildkite after Feature branch environment
+- After merge to `master` all tests on STAGING environment
+- After release to PROD, smoke tests run on PRODUCTION environment
